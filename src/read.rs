@@ -277,6 +277,23 @@ impl<R: Read+io::Seek> ZipArchive<R>
         };
         self.by_index(index)
     }
+    
+    /// Search and read raw bytes from zip by name
+    pub fn by_name_raw(&mut self, name: &str) -> ZipResult<Vec<u8>> {
+        let index = match self.names_map.get(name) {
+            Some(index) => *index,
+            None => { return Err(ZipError::FileNotFound); },
+        };
+        let ref data = self.files[index];
+        let pos = data.data_start;
+        try!(self.reader.seek(io::SeekFrom::Start(pos)));
+        let reader = (self.reader.by_ref() as &mut Read)
+            .take(data.compressed_size)
+            .bytes()
+            .map(|b| b.unwrap())
+            .collect();
+        Ok(reader)
+    }
 
     /// Get a contained file by index
     pub fn by_index<'a>(&'a mut self, file_number: usize) -> ZipResult<ZipFile<'a>>
