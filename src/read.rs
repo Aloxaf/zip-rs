@@ -209,7 +209,7 @@ impl<R: Read+io::Seek> ZipArchive<R>
     }
 
     /// Opens a Zip archive and parses the central directory
-    pub fn new(mut reader: R) -> ZipResult<ZipArchive<R>> {
+    pub fn new(mut reader: R, ignore_lfheader_error: bool) -> ZipResult<ZipArchive<R>> {
         let (footer, cde_start_pos) = try!(spec::CentralDirectoryEnd::find_and_parse(&mut reader));
 
         if footer.disk_number != footer.disk_with_central_directory
@@ -229,7 +229,7 @@ impl<R: Read+io::Seek> ZipArchive<R>
 
         for _ in 0 .. number_of_files
         {
-            let file = try!(central_header_to_zip_file(&mut reader, archive_offset));
+            let file = try!(central_header_to_zip_file(&mut reader, archive_offset, ignore_lfheader_error));
             names_map.insert(file.file_name.clone(), files.len());
             files.push(file);
         }
@@ -322,7 +322,7 @@ impl<R: Read+io::Seek> ZipArchive<R>
     }
 }
 
-fn central_header_to_zip_file<R: Read+io::Seek>(reader: &mut R, archive_offset: u64) -> ZipResult<ZipFileData>
+fn central_header_to_zip_file<R: Read+io::Seek>(reader: &mut R, archive_offset: u64, ignore_lfheader_error: bool) -> ZipResult<ZipFileData>
 {
     // Parse central header
     let signature = try!(reader.read_u32::<LittleEndian>());
@@ -399,7 +399,11 @@ fn central_header_to_zip_file<R: Read+io::Seek>(reader: &mut R, archive_offset: 
     let signature = try!(reader.read_u32::<LittleEndian>());
     if signature != spec::LOCAL_FILE_HEADER_SIGNATURE
     {
-        return Err(ZipError::InvalidArchive("Invalid local file header"))
+        if ignore_lfheader_error {
+            eprintln!("Invalid local file header {:x} for [{}]", signature, result.file_name);
+        } else {
+            return Err(ZipError::InvalidArchive("Invalid local file header"));
+        }
     }
 
     try!(reader.seek(io::SeekFrom::Current(22)));
