@@ -277,6 +277,15 @@ impl<R: Read+io::Seek> ZipArchive<R>
         };
         self.by_index(index)
     }
+
+    /// Search for a file metadata by name
+    pub fn by_name_meta(&self, name: &str) -> ZipResult<&ZipFileData> {
+        let index = match self.names_map.get(name) {
+            Some(index) => *index,
+            None => { return Err(ZipError::FileNotFound); },
+        };
+        Ok(&self.files[index])
+    }
     
     /// Search and read raw bytes from zip by name
     pub fn by_name_raw(&mut self, name: &str) -> ZipResult<Vec<u8>> {
