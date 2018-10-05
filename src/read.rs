@@ -677,7 +677,7 @@ mod test {
 
         let mut v = Vec::new();
         v.extend_from_slice(include_bytes!("../tests/data/invalid_offset.zip"));
-        let reader = ZipArchive::new(io::Cursor::new(v));
+        let reader = ZipArchive::new(io::Cursor::new(v), false);
         assert!(reader.is_err());
     }
 
@@ -688,7 +688,7 @@ mod test {
 
         let mut v = Vec::new();
         v.extend_from_slice(include_bytes!("../tests/data/zip64_demo.zip"));
-        let reader = ZipArchive::new(io::Cursor::new(v)).unwrap();
+        let reader = ZipArchive::new(io::Cursor::new(v), false).unwrap();
         assert!(reader.len() == 1);
     }
 
@@ -699,7 +699,7 @@ mod test {
 
         let mut v = Vec::new();
         v.extend_from_slice(include_bytes!("../tests/data/mimetype.zip"));
-        let reader = ZipArchive::new(io::Cursor::new(v)).unwrap();
+        let reader = ZipArchive::new(io::Cursor::new(v), false).unwrap();
         assert!(reader.comment == b"zip-rs");
     }
 
@@ -726,7 +726,7 @@ mod test {
 
         let mut v = Vec::new();
         v.extend_from_slice(include_bytes!("../tests/data/mimetype.zip"));
-        let mut reader1 = ZipArchive::new(io::Cursor::new(v)).unwrap();
+        let mut reader1 = ZipArchive::new(io::Cursor::new(v), false).unwrap();
         let mut reader2 = reader1.clone();
 
         let mut file1 = reader1.by_index(0).unwrap();
