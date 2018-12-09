@@ -2,7 +2,6 @@ language: rust
 
 rust:
     - stable
-    - 1.20.0
 
 sudo: false
 
@@ -14,8 +13,6 @@ notifications:
 script:
     - cargo test
     - cargo test --no-default-features
-    - cargo test --no-default-features --features "deflate-zlib"
-    - cargo test --no-default-features --features "deflate-miniz"
     - cargo doc --no-deps
     - rustdoc --test README.md -L target/debug
 
