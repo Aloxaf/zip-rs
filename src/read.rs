@@ -267,10 +267,11 @@ impl<R: Read+io::Seek> ZipArchive<R>
         if file_number >= self.files.len() { return Err(ZipError::FileNotFound); }
         let ref mut data = self.files[file_number];
 
-        if data.encrypted
-        {
-            return unsupported_zip_error("Encrypted files are not supported")
-        }
+        // edit for rbkcrack: 咱不在乎有没有密码, 咱破解的就是密码
+        // if data.encrypted
+        // {
+        //     return unsupported_zip_error("Encrypted files are not supported")
+        // }
 
         // Parse local header
         self.reader.seek(io::SeekFrom::Start(data.header_start))?;
