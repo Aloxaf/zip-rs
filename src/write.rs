@@ -14,7 +14,9 @@ use time;
 use podio::{WritePodExt, LittleEndian};
 
 #[cfg(feature = "deflate")]
-use libflate;
+use flate2;
+#[cfg(feature = "deflate")]
+use flate2::write::DeflateEncoder;
 
 #[cfg(feature = "bzip2")]
 use bzip2;
@@ -26,7 +28,7 @@ enum GenericZipWriter<W: Write + io::Seek>
     Closed,
     Storer(W),
     #[cfg(feature = "deflate")]
-    Deflater(libflate::deflate::Encoder<W>),
+    Deflater(DeflateEncoder<W>),
     #[cfg(feature = "bzip2")]
     Bzip2(BzEncoder<W>),
 }
@@ -118,6 +120,12 @@ impl FileOptions {
     pub fn unix_permissions(mut self, mode: u32) -> FileOptions {
         self.permissions = Some(mode & 0o777);
         self
+    }
+}
+
+impl Default for FileOptions {
+    fn default() -> Self {
+        Self::default()
     }
 }
 
@@ -368,7 +376,7 @@ impl<W: Write+io::Seek> GenericZipWriter<W>
         {
             GenericZipWriter::Storer(w) => w,
             #[cfg(feature = "deflate")]
-            GenericZipWriter::Deflater(w) =>  w.finish().into_result()?,
+            GenericZipWriter::Deflater(w) => w.finish()?,
             #[cfg(feature = "bzip2")]
             GenericZipWriter::Bzip2(w) => w.finish()?,
             GenericZipWriter::Closed => Err(io::Error::new(io::ErrorKind::BrokenPipe, "ZipWriter was already closed"))?,
@@ -378,7 +386,7 @@ impl<W: Write+io::Seek> GenericZipWriter<W>
         {
             CompressionMethod::Stored => GenericZipWriter::Storer(bare),
             #[cfg(feature = "deflate")]
-            CompressionMethod::Deflated => GenericZipWriter::Deflater(libflate::deflate::Encoder::new(bare)),
+            CompressionMethod::Deflated => GenericZipWriter::Deflater(DeflateEncoder::new(bare, flate2::Compression::default())),
             #[cfg(feature = "bzip2")]
             CompressionMethod::Bzip2 => GenericZipWriter::Bzip2(BzEncoder::new(bare, bzip2::Compression::Default)),
             CompressionMethod::Unsupported(..) => return Err(ZipError::UnsupportedArchive("Unsupported compression")),
